@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>Escala de Trabalho TB</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-page: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-primary: #1e2937;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --btn-bg: #3b82f6;
+            --feriado-bg: #fee2e2;
+            --feriado-text: #b91c1c;
+            --trabalho-bg: #d1fae5;
+            --trabalho-text: #065f46;
+            --folga-bg: #fef3c7;
+            --folga-text: #854d0e;
+            --domingo-color: #ef4444;
+        }
+        body.dark {
+            --bg-page: #0f172a;
+            --card-bg: #1e2937;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --btn-bg: #60a5fa;
+            --feriado-bg: #450a0a;
+            --feriado-text: #fda4af;
+            --trabalho-bg: #052e16;
+            --trabalho-text: #4ade80;
+            --folga-bg: #451a03;
+            --folga-text: #fbbf24;
+            --domingo-color: #f87171;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-page);
+            min-height: 100vh;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 440px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 580px;
+        }
+        .app-page { display: none; flex-direction: column; flex: 1; }
+        .app-page.active { display: flex; }
+        .header {
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .title h1 {
+            font-size: 1.25rem; font-weight: 700;
+            color: var(--text-primary);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .title p { font-size: 0.7rem; color: var(--text-secondary); }
+        .buttons { display: flex; gap: 8px; }
+        .buttons button {
+            width: 46px; height: 46px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; cursor: pointer;
+            background: var(--card-bg); color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .buttons button#shareBtn { background: var(--btn-bg); color: white; border: none; }
+        .nav {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; background: var(--bg-page);
+        }
+        .month-year {
+            font-size: 1.1rem; font-weight: 700;
+            color: var(--text-primary); flex: 1; text-align: center;
+        }
+        .nav-btn {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: var(--card-bg); border: 1px solid var(--border);
+            color: var(--text-primary);
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+        .weekdays {
+            display: grid; grid-template-columns: repeat(7, 1fr);
+            text-align: center; font-size: 0.65rem; font-weight: 600;
+            color: var(--text-secondary); padding: 8px 10px 4px;
+            border-bottom: 1px solid var(--border);
+        }
+        .days {
+            display: grid; grid-template-columns: repeat(7, 1fr);
+            gap: 4px; padding: 10px; flex: 1;
+        }
+        .day {
+            background: var(--card-bg); border: 1.5px solid var(--border);
+            border-radius: 10px; aspect-ratio: 1 / 1;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: space-between;
+            padding: 4px 2px; position: relative;
+        }
+        .day.today { border-color: #3b82f6; background: rgba(59,130,246,0.08); }
+        .day.dia-ferias { border-color: transparent !important; }
+        .day.dia-ferias .day-number,
+        .day.dia-ferias .badge { color: white !important; }
+        .day-number { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+        .domingo .day-number { color: var(--domingo-color); }
+        .badge {
+            font-size: 0.55rem; font-weight: 700;
+            padding: 1px 4px; border-radius: 9999px;
+            width: 85%; text-align: center; line-height: 1.3;
+        }
+        .trabalho-badge { background: var(--trabalho-bg); color: var(--trabalho-text); }
+        .folga-badge    { background: var(--folga-bg);    color: var(--folga-text); }
+        .feriado-badge {
+            position: absolute; bottom: 2px;
+            font-size: 0.4rem; padding: 1px 4px; border-radius: 9999px;
+            background: var(--feriado-bg); color: var(--feriado-text);
+            white-space: nowrap; max-width: 90%;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .empty-day { opacity: 0.3; border-style: dashed; aspect-ratio: 1 / 1; }
+
+        /* Férias */
+        .content-ferias {
+            padding: 16px;
+            display: flex; flex-direction: column;
+            gap: 14px; flex: 1; overflow-y: auto;
+        }
+        .form-card {
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .form-card-title {
+            font-size: 0.8rem; font-weight: 700;
+            color: var(--text-secondary);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .form-card-title .cor-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            display: inline-block; flex-shrink: 0;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
+        .form-group input {
+            padding: 10px 12px; border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--card-bg); color: var(--text-primary);
+            font-size: 0.95rem; outline: none;
+        }
+        .btn-salvar-ferias {
+            background: var(--btn-bg); color: white; border: none;
+            padding: 12px; border-radius: 10px;
+            font-weight: 700; font-size: 0.95rem; cursor: pointer;
+        }
+        .lista-periodos {
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+        }
+        .lista-periodos h4 {
+            font-size: 0.85rem; color: var(--text-primary);
+            margin-bottom: 8px; font-weight: 700;
+        }
+        .lista-periodos-scroll {
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .item-periodo {
+            padding: 10px 12px; border-radius: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid var(--border);
+        }
+        .item-periodo-info {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .item-periodo-cor {
+            width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+        }
+        .item-periodo span {
+            font-size: 0.82rem; color: var(--text-primary); font-weight: 500;
+        }
+        .btn-limpar {
+            background: #ef4444; color: white; border: none;
+            padding: 5px 10px; border-radius: 6px;
+            font-size: 0.72rem; font-weight: 600; cursor: pointer; flex-shrink: 0;
+        }
+        .empty-list {
+            font-size: 0.82rem; color: var(--text-secondary);
+            font-style: italic; text-align: center; padding: 8px 0;
+        }
+
+        /* Tab bar */
+        .tab-bar {
+            display: grid; grid-template-columns: 1fr 1fr;
+            border-top: 1px solid var(--border); background: var(--card-bg);
+        }
+        .tab-item {
+            padding: 12px; text-align: center; color: var(--text-secondary);
+            font-size: 0.75rem; font-weight: 600; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 4px; transition: 0.2s;
+        }
+        .tab-item i { font-size: 1.2rem; }
+        .tab-item.active { color: var(--btn-bg); background: rgba(59,130,246,0.05); }
+        .footer {
+            text-align: center; font-size: 0.6rem; color: var(--text-secondary);
+            padding: 8px 0; background: var(--bg-page); border-top: 1px solid var(--border);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2000; opacity: 0; visibility: hidden; transition: 0.2s;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-box {
+            background: var(--card-bg); width: 86%; max-width: 300px;
+            border-radius: 16px; padding: 18px; text-align: center;
+        }
+        .modal-box h3 { color: var(--text-primary); margin-bottom: 8px; }
+        .modal-box p  { color: var(--text-secondary); margin-bottom: 16px; }
+        .modal-close-btn {
+            width: 100%; padding: 10px; border-radius: 8px;
+            background: var(--btn-bg); color: white; border: none;
+            font-weight: 600; cursor: pointer;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 80px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text-primary); color: var(--bg-page);
+            padding: 12px 24px; border-radius: 12px;
+            font-size: 0.9rem; font-weight: 500;
+            opacity: 0; transition: all 0.4s ease; z-index: 3000; pointer-events: none;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 380px) {
+            .badge { font-size: 0.45rem; }
+            .day-number { font-size: 0.8rem; }
+            .feriado-badge { font-size: 0.35rem; }
+            .header .title h1 { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div id="pageCalendario" class="app-page active">
+        <div class="header" id="captureArea">
+            <div class="title">
+                <h1><i class="fas fa-calendar-alt"></i> Escala TB</h1>
+                <p>2 dias trabalho • 2 dias folga</p>
+            </div>
+            <div class="buttons">
+                <button id="shareBtn"><i class="fas fa-share-alt"></i></button>
+                <button id="darkBtn"><i class="fas fa-moon"></i></button>
+            </div>
+        </div>
+        <div class="nav">
+            <button id="prevBtn" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+            <span class="month-year" id="monthYear"></span>
+            <button id="nextBtn" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+            <button id="todayBtn" style="background:var(--btn-bg);color:white;width:38px;height:38px;border:none;border-radius:50%;cursor:pointer;"><i class="fas fa-calendar-day"></i></button>
+        </div>
+        <div class="weekdays">
+            <span>DOM</span><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span>
+        </div>
+        <div class="days" id="daysGrid"></div>
+    </div>
+
+    <div id="pageFerias" class="app-page">
+        <div class="header">
+            <div class="title">
+                <h1><i class="fas fa-umbrella-beach"></i> Férias</h1>
+                <p>Adicione até 3 períodos de descanso</p>
+            </div>
+        </div>
+        <div class="content-ferias">
+
+            <!-- Formulário dinâmico (será gerado pelo JS) -->
+            <div id="formsFerias"></div>
+
+            <div class="lista-periodos">
+                <h4>Períodos Salvos:</h4>
+                <div class="lista-periodos-scroll" id="statusFeriasContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <div class="tab-item active" id="tabCalendario">
+            <i class="fas fa-calendar-days"></i>
+            <span>Escala</span>
+        </div>
+        <div class="tab-item" id="tabFerias">
+            <i class="fas fa-umbrella-beach"></i>
+            <span>Férias</span>
+        </div>
+    </div>
+
+    <div class="footer">Base: 01/01/2024 | Feriados Nacionais + São Luís - MA</div>
+</div>
+
+<div class="modal-overlay" id="customModal">
+    <div class="modal-box">
+        <h3 id="modalDate"></h3>
+        <p id="modalText"></p>
+        <button class="modal-close-btn" id="modalCloseBtn">Fechar</button>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+    // ==================== CONFIGURAÇÃO DE CORES DAS FÉRIAS ====================
+    const CORES_FERIAS = [
+        { bg: '#10b981', label: '1º Período' },
+        { bg: '#f59e0b', label: '2º Período' },
+        { bg: '#8b5cf6', label: '3º Período' },
+    ];
+    const MAX_PERIODOS = 3;
+
+    // ==================== FERIADOS ====================
+    const feriadosLocaisSLZ = [
+        { mes: 6,  dia: 29, nome: "São Pedro (São Luís)" },
+        { mes: 7,  dia: 28, nome: "Adesão do Maranhão" },
+        { mes: 9,  dia: 8,  nome: "Natividade de N. Sra / Aniversário de São Luís" },
+        { mes: 12, dia: 8,  nome: "Nossa Senhora da Conceição" }
+    ];
+
+    function getFeriado(ano, mes, dia) {
+        const nacionais = [
+            [1,1,"Confraternização Universal"],[4,21,"Tiradentes"],
+            [5,1,"Dia do Trabalho"],[9,7,"Independência do Brasil"],
+            [10,12,"Nossa Senhora Aparecida"],[11,2,"Finados"],
+            [11,15,"Proclamação da República"],[11,20,"Dia da Consciência Negra"],
+            [12,25,"Natal"]
+        ];
+        for (let f of nacionais) if (f[0] === mes && f[1] === dia) return f[2];
+
+        const data = new Date(ano, mes - 1, dia);
+        function getEaster(y) {
+            const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4;
+            const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
+            const h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4;
+            const l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451);
+            const mesE=Math.floor((h+l-7*m+114)/31), diaE=((h+l-7*m+114)%31)+1;
+            return new Date(y, mesE-1, diaE);
+        }
+        const easter  = getEaster(ano);
+        const carnaval = new Date(easter); carnaval.setDate(easter.getDate()-47);
+        const sexta    = new Date(easter); sexta.setDate(easter.getDate()-2);
+        const corpus   = new Date(easter); corpus.setDate(easter.getDate()+60);
+        if (data.toDateString()===carnaval.toDateString()) return "Carnaval";
+        if (data.toDateString()===sexta.toDateString())    return "Sexta-Feira Santa";
+        if (data.toDateString()===easter.toDateString())   return "Páscoa";
+        if (data.toDateString()===corpus.toDateString())   return "Corpus Christi";
+        if (mes===6 && dia===24) return "São João (São Luís)";
+        for (let p of feriadosLocaisSLZ) if (p.mes===mes && p.dia===dia) return p.nome;
+        return null;
+    }
+
+    // ==================== ESCALA ====================
+    const dataBase = new Date(2024, 0, 1);
+    function getTurno(data) {
+        const diff = Math.floor((data - dataBase) / 86400000);
+        let pos = diff % 4;
+        if (pos < 0) pos += 4;
+        return (pos === 0 || pos === 1) ? "Trab." : "Folga";
+    }
+
+    // ==================== ESTADO ====================
+    let anoAtual  = new Date().getFullYear();
+    let mesAtual  = new Date().getMonth();
+    let darkMode  = localStorage.getItem('darkMode') === 'true';
+
+    // periodos = array de { inicio: 'YYYY-MM-DD', dias: N }
+    let periodos = JSON.parse(localStorage.getItem('periodos_ferias_v2')) || [];
+
+    // Mapa rápido: data -> índice do período
+    let mapaFerias = {};
+
+    function reconstruirMapa() {
+        mapaFerias = {};
+        periodos.forEach((p, idx) => {
+            let dataLoop = new Date(p.inicio + 'T00:00:00');
+            for (let i = 0; i < p.dias; i++) {
+                const key = `${dataLoop.getFullYear()}-${String(dataLoop.getMonth()+1).padStart(2,'0')}-${String(dataLoop.getDate()).padStart(2,'0')}`;
+                mapaFerias[key] = idx;
+                dataLoop.setDate(dataLoop.getDate() + 1);
+            }
+        });
+    }
+
+    function salvarPeriodos() {
+        localStorage.setItem('periodos_ferias_v2', JSON.stringify(periodos));
+        reconstruirMapa();
+    }
+
+    // ==================== UI: FORMULÁRIOS ====================
+    function renderizarFormularios() {
+        const container = document.getElementById('formsFerias');
+        container.innerHTML = '';
+
+        const proximoSlot = periodos.length;
+
+        if (proximoSlot >= MAX_PERIODOS) {
+            container.innerHTML = `<p style="font-size:0.82rem;color:var(--text-secondary);font-style:italic;text-align:center;">Limite de ${MAX_PERIODOS} períodos atingido. Remova um para adicionar outro.</p>`;
+            return;
+        }
+
+        const cor = CORES_FERIAS[proximoSlot];
+        const card = document.createElement('div');
+        card.className = 'form-card';
+        card.innerHTML = `
+            <div class="form-card-title">
+                <span class="cor-dot" style="background:${cor.bg}"></span>
+                Novo período — ${cor.label}
+            </div>
+            <div class="form-group">
+                <label>Data de Início</label>
+                <input type="date" id="dataInicio_${proximoSlot}">
+            </div>
+            <div class="form-group">
+                <label>Quantidade de Dias</label>
+                <input type="number" id="qtdDias_${proximoSlot}" value="15" min="1">
+            </div>
+            <button class="btn-salvar-ferias" style="background:${cor.bg}" data-slot="${proximoSlot}">
+                <i class="fas fa-plus"></i> Adicionar Período
+            </button>
+        `;
+        container.appendChild(card);
+
+        document.getElementById(`dataInicio_${proximoSlot}`).value = new Date().toISOString().split('T')[0];
+
+        card.querySelector('.btn-salvar-ferias').addEventListener('click', (e) => {
+            const slot = parseInt(e.currentTarget.dataset.slot);
+            salvarPeriodo(slot);
+        });
+    }
+
+    function salvarPeriodo(slot) {
+        const dataInicioValor = document.getElementById(`dataInicio_${slot}`).value;
+        const qtdDias = parseInt(document.getElementById(`qtdDias_${slot}`).value) || 1;
+        if (!dataInicioValor) { showToast('Selecione uma data válida!'); return; }
+
+        // Verifica sobreposição
+        const novoDias = [];
+        let dataLoop = new Date(dataInicioValor + 'T00:00:00');
+        for (let i = 0; i < qtdDias; i++) {
+            const key = `${dataLoop.getFullYear()}-${String(dataLoop.getMonth()+1).padStart(2,'0')}-${String(dataLoop.getDate()).padStart(2,'0')}`;
+            if (mapaFerias[key] !== undefined) {
+                showToast('⚠️ Período se sobrepõe com outro já salvo!');
+                return;
+            }
+            novoDias.push(key);
+            dataLoop.setDate(dataLoop.getDate() + 1);
+        }
+
+        periodos.push({ inicio: dataInicioValor, dias: qtdDias });
+        salvarPeriodos();
+        atualizarListaFeriasUI();
+        renderizarFormularios();
+        renderizarCalendario();
+        showToast(`${CORES_FERIAS[slot].label} salvo! Confira no calendário.`);
+    }
+
+    // ==================== UI: LISTA DE PERÍODOS ====================
+    function atualizarListaFeriasUI() {
+        const container = document.getElementById('statusFeriasContainer');
+        if (periodos.length === 0) {
+            container.innerHTML = `<p class="empty-list">Nenhum período adicionado ainda.</p>`;
+            return;
+        }
+        container.innerHTML = '';
+        periodos.forEach((p, idx) => {
+            const cor = CORES_FERIAS[idx];
+            const [ano, mes, dia] = p.inicio.split('-');
+            const item = document.createElement('div');
+            item.className = 'item-periodo';
+            item.style.background = `${cor.bg}18`;
+            item.style.borderColor = `${cor.bg}55`;
+            item.innerHTML = `
+                <div class="item-periodo-info">
+                    <span class="item-periodo-cor" style="background:${cor.bg}"></span>
+                    <span>${cor.label}: ${dia}/${mes}/${ano} (${p.dias} dias)</span>
+                </div>
+                <button class="btn-limpar" data-idx="${idx}">Limpar</button>
+            `;
+            container.appendChild(item);
+        });
+
+        container.querySelectorAll('.btn-limpar').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.currentTarget.dataset.idx);
+                periodos.splice(idx, 1);
+                salvarPeriodos();
+                atualizarListaFeriasUI();
+                renderizarFormularios();
+                renderizarCalendario();
+                showToast('Período removido!');
+            });
+        });
+    }
+
+    // ==================== CALENDÁRIO ====================
+    function renderizarCalendario() {
+        const primeiroDia = new Date(anoAtual, mesAtual, 1);
+        const ultimoDia   = new Date(anoAtual, mesAtual + 1, 0);
+        const startWeek   = primeiroDia.getDay();
+        const totalDias   = ultimoDia.getDate();
+        const hoje = new Date(); hoje.setHours(0,0,0,0);
+
+        const daysGrid = document.getElementById('daysGrid');
+        daysGrid.innerHTML = '';
+
+        for (let i = 0; i < startWeek; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'day empty-day';
+            daysGrid.appendChild(empty);
+        }
+
+        for (let d = 1; d <= totalDias; d++) {
+            const dataAtual = new Date(anoAtual, mesAtual, d);
+            const turno     = getTurno(dataAtual);
+            const feriado   = getFeriado(anoAtual, mesAtual+1, d);
+            const isDomingo = dataAtual.getDay() === 0;
+            const isHoje    = dataAtual.getFullYear()===hoje.getFullYear() &&
+                              dataAtual.getMonth()===hoje.getMonth() &&
+                              dataAtual.getDate()===hoje.getDate();
+
+            const dataFormatada = `${dataAtual.getFullYear()}-${String(dataAtual.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const periodoIdx = mapaFerias[dataFormatada];
+            const ehFerias   = periodoIdx !== undefined;
+
+            const dayDiv = document.createElement('div');
+            dayDiv.className = `day ${isDomingo?'domingo':''} ${isHoje?'today':''} ${ehFerias?'dia-ferias':''}`;
+            if (ehFerias) {
+                dayDiv.style.background = CORES_FERIAS[periodoIdx].bg;
+            }
+
+            const num = document.createElement('div');
+            num.className = 'day-number';
+            num.textContent = d;
+            dayDiv.appendChild(num);
+
+            const badge = document.createElement('div');
+            badge.className = `badge ${turno==='Trab.'?'trabalho-badge':'folga-badge'}`;
+            badge.textContent = turno;
+            dayDiv.appendChild(badge);
+
+            if (feriado) {
+                const fer = document.createElement('div');
+                fer.className = 'feriado-badge';
+                fer.textContent = '🎉 ' + feriado;
+                fer.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+                    openModal(`${d} de ${meses[mesAtual]} de ${anoAtual}`, feriado);
+                });
+                dayDiv.appendChild(fer);
+            }
+            daysGrid.appendChild(dayDiv);
+        }
+
+        const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        document.getElementById('monthYear').textContent = `${meses[mesAtual]} ${anoAtual}`;
+    }
+
+    // ==================== HELPERS ====================
+    function openModal(dataTexto, feriadoTexto) {
+        document.getElementById('modalDate').textContent = dataTexto;
+        document.getElementById('modalText').textContent = feriadoTexto;
+        document.getElementById('customModal').classList.add('active');
+    }
+    function closeModal() { document.getElementById('customModal').classList.remove('active'); }
+
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function mesAnterior() { if (mesAtual===0){mesAtual=11;anoAtual--;}else mesAtual--; renderizarCalendario(); }
+    function mesProximo()  { if (mesAtual===11){mesAtual=0;anoAtual++;}else mesAtual++; renderizarCalendario(); }
+    function irHoje() { const h=new Date(); anoAtual=h.getFullYear(); mesAtual=h.getMonth(); renderizarCalendario(); }
+
+    function aplicarTema(escuro) {
+        document.body.classList.toggle('dark', escuro);
+        localStorage.setItem('darkMode', escuro);
+        document.getElementById('darkBtn').innerHTML = escuro
+            ? '<i class="fas fa-sun"></i>'
+            : '<i class="fas fa-moon"></i>';
+    }
+
+    async function compartilharEscala() {
+        try {
+            const element = document.getElementById('pageCalendario');
+            const canvas  = await html2canvas(element, {
+                scale: 2,
+                backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim() || '#ffffff',
+                useCORS: true, allowTaint: true, logging: false
+            });
+            canvas.toBlob(async blob => {
+                if (!blob) return;
+                const file = new File([blob], 'escala.png', {type:'image/png'});
+                if (navigator.share) {
+                    try { await navigator.share({title:'Escala TB', files:[file]}); } catch(_){}
+                } else {
+                    const link = document.createElement('a');
+                    link.download = `escala_${mesAtual+1}_${anoAtual}.png`;
+                    link.href = URL.createObjectURL(blob); link.click();
+                }
+            }, 'image/png');
+        } catch { showToast('Erro ao compartilhar'); }
+    }
+
+    // ==================== INIT ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        reconstruirMapa();
+        renderizarCalendario();
+        aplicarTema(darkMode);
+        atualizarListaFeriasUI();
+        renderizarFormularios();
+
+        document.getElementById('tabCalendario').addEventListener('click', () => {
+            document.getElementById('tabFerias').classList.remove('active');
+            document.getElementById('tabCalendario').classList.add('active');
+            document.getElementById('pageFerias').classList.remove('active');
+            document.getElementById('pageCalendario').classList.add('active');
+            renderizarCalendario();
+        });
+        document.getElementById('tabFerias').addEventListener('click', () => {
+            document.getElementById('tabCalendario').classList.remove('active');
+            document.getElementById('tabFerias').classList.add('active');
+            document.getElementById('pageCalendario').classList.remove('active');
+            document.getElementById('pageFerias').classList.add('active');
+        });
+
+        document.getElementById('prevBtn').addEventListener('click', mesAnterior);
+        document.getElementById('nextBtn').addEventListener('click', mesProximo);
+        document.getElementById('todayBtn').addEventListener('click', irHoje);
+        document.getElementById('shareBtn').addEventListener('click', compartilharEscala);
+        document.getElementById('darkBtn').addEventListener('click', () => { darkMode=!darkMode; aplicarTema(darkMode); });
+
+        const modal = document.getElementById('customModal');
+        document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+        modal.addEventListener('click', e => { if (e.target===modal) closeModal(); });
+    });
+</script>
+</body>
+</html>
