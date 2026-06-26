@@ -99,6 +99,7 @@
         }
         .weekdays {
             display: grid; grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
             text-align: center; font-size: 0.65rem; font-weight: 600;
             color: var(--text-secondary); padding: 8px 10px 4px;
             border-bottom: 1px solid var(--border);
@@ -113,6 +114,7 @@
             display: flex; flex-direction: column;
             align-items: center; justify-content: space-between;
             padding: 4px 2px; position: relative;
+            min-width: 0;
         }
         .day.today { border-color: #3b82f6; background: rgba(59,130,246,0.08); }
         .day.dia-ferias { border-color: transparent !important; }
@@ -134,6 +136,7 @@
             white-space: nowrap; max-width: 90%;
             overflow: hidden; text-overflow: ellipsis;
         }
+        .weekdays span { min-width: 0; }
         .empty-day { opacity: 0.3; border-style: dashed; aspect-ratio: 1 / 1; }
 
         /* Férias */
@@ -171,6 +174,13 @@
             padding: 12px; border-radius: 10px;
             font-weight: 700; font-size: 0.95rem; cursor: pointer;
         }
+        .aviso-folga-inicio {
+            font-size: 0.75rem; color: #b45309; font-weight: 600;
+            background: #fef3c7; border: 1px solid #fcd34d;
+            border-radius: 8px; padding: 8px 10px;
+            display: flex; align-items: flex-start; gap: 6px;
+        }
+        .aviso-folga-inicio:empty { display: none; padding: 0; border: none; }
         .lista-periodos {
             border-top: 1px solid var(--border);
             padding-top: 14px;
@@ -184,18 +194,50 @@
         }
         .item-periodo {
             padding: 10px 12px; border-radius: 10px;
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; justify-content: space-between; align-items: flex-start;
             border: 1px solid var(--border);
+            gap: 8px;
         }
         .item-periodo-info {
-            display: flex; align-items: center; gap: 8px;
+            display: flex; align-items: flex-start; gap: 8px;
         }
         .item-periodo-cor {
             width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+            margin-top: 4px;
         }
         .item-periodo span {
             font-size: 0.82rem; color: var(--text-primary); font-weight: 500;
         }
+        .item-periodo-retorno {
+            font-size: 0.72rem; color: var(--text-secondary);
+            margin-top: 3px;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .item-periodo-retorno strong { color: #10b981; }
+        .item-periodo-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .btn-editar {
+            background: var(--btn-bg); color: white; border: none;
+            padding: 5px 10px; border-radius: 6px;
+            font-size: 0.72rem; font-weight: 600; cursor: pointer;
+        }
+        .item-periodo-edit {
+            display: flex; flex-direction: column; gap: 8px;
+            width: 100%;
+        }
+        .item-periodo-edit .form-row { display: flex; gap: 6px; }
+        .item-periodo-edit input {
+            padding: 8px 10px; border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card-bg); color: var(--text-primary);
+            font-size: 0.85rem; outline: none; width: 100%;
+        }
+        .item-periodo-edit-actions { display: flex; gap: 6px; }
+        .btn-salvar-edicao, .btn-cancelar-edicao {
+            flex: 1; padding: 8px; border: none; border-radius: 8px;
+            font-weight: 700; font-size: 0.78rem; cursor: pointer;
+        }
+        .btn-salvar-edicao { background: #10b981; color: white; }
+        .btn-cancelar-edicao { background: var(--border); color: var(--text-primary); }
         .btn-limpar {
             background: #ef4444; color: white; border: none;
             padding: 5px 10px; border-radius: 6px;
@@ -443,6 +485,7 @@
                 <label>Quantidade de Dias</label>
                 <input type="number" id="qtdDias_${proximoSlot}" value="15" min="1">
             </div>
+            <div class="aviso-folga-inicio" id="avisoFolgaInicio_${proximoSlot}"></div>
             <button class="btn-salvar-ferias" style="background:${cor.bg}" data-slot="${proximoSlot}">
                 <i class="fas fa-plus"></i> Adicionar Período
             </button>
@@ -450,6 +493,21 @@
         container.appendChild(card);
 
         document.getElementById(`dataInicio_${proximoSlot}`).value = new Date().toISOString().split('T')[0];
+
+        function checarFolgaInicio() {
+            const inputData = document.getElementById(`dataInicio_${proximoSlot}`).value;
+            const avisoEl = document.getElementById(`avisoFolgaInicio_${proximoSlot}`);
+            if (!inputData) { avisoEl.innerHTML = ''; return; }
+            const dataEscolhida = new Date(inputData + 'T00:00:00');
+            if (getTurno(dataEscolhida) !== 'Trab.') {
+                avisoEl.innerHTML = `<i class="fas fa-triangle-exclamation"></i> O dia escolhido é uma folga na escala. Você pode salvar mesmo assim.`;
+            } else {
+                avisoEl.innerHTML = '';
+            }
+        }
+
+        document.getElementById(`dataInicio_${proximoSlot}`).addEventListener('change', checarFolgaInicio);
+        checarFolgaInicio();
 
         card.querySelector('.btn-salvar-ferias').addEventListener('click', (e) => {
             const slot = parseInt(e.currentTarget.dataset.slot);
@@ -480,10 +538,39 @@
         atualizarListaFeriasUI();
         renderizarFormularios();
         renderizarCalendario();
-        showToast(`${CORES_FERIAS[slot].label} salvo! Confira no calendário.`);
+
+        const primeiroDia = new Date(dataInicioValor + 'T00:00:00');
+        if (getTurno(primeiroDia) !== 'Trab.') {
+            showToast(`⚠️ ${CORES_FERIAS[slot].label} salvo! Atenção: o 1º dia cai numa folga.`);
+        } else {
+            showToast(`${CORES_FERIAS[slot].label} salvo! Confira no calendário.`);
+        }
     }
 
     // ==================== UI: LISTA DE PERÍODOS ====================
+    let editandoIdx = null;
+
+    function calcularFim(inicio, dias) {
+        const fim = new Date(inicio + 'T00:00:00');
+        fim.setDate(fim.getDate() + dias - 1);
+        return fim;
+    }
+
+    function calcularRetorno(inicio, dias) {
+        const fim = calcularFim(inicio, dias);
+        let retorno = new Date(fim);
+        retorno.setDate(retorno.getDate() + 1);
+        // Avança até cair em um dia de Trabalho na escala 2x2
+        while (getTurno(retorno) !== 'Trab.') {
+            retorno.setDate(retorno.getDate() + 1);
+        }
+        return retorno;
+    }
+
+    function formatarData(d) {
+        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    }
+
     function atualizarListaFeriasUI() {
         const container = document.getElementById('statusFeriasContainer');
         if (periodos.length === 0) {
@@ -493,18 +580,48 @@
         container.innerHTML = '';
         periodos.forEach((p, idx) => {
             const cor = CORES_FERIAS[idx];
-            const [ano, mes, dia] = p.inicio.split('-');
             const item = document.createElement('div');
             item.className = 'item-periodo';
             item.style.background = `${cor.bg}18`;
             item.style.borderColor = `${cor.bg}55`;
-            item.innerHTML = `
-                <div class="item-periodo-info">
-                    <span class="item-periodo-cor" style="background:${cor.bg}"></span>
-                    <span>${cor.label}: ${dia}/${mes}/${ano} (${p.dias} dias)</span>
-                </div>
-                <button class="btn-limpar" data-idx="${idx}">Limpar</button>
-            `;
+
+            if (editandoIdx === idx) {
+                // ----- MODO EDIÇÃO -----
+                item.innerHTML = `
+                    <div class="item-periodo-edit">
+                        <div class="form-card-title">
+                            <span class="cor-dot" style="background:${cor.bg}"></span>
+                            Editando ${cor.label}
+                        </div>
+                        <div class="form-row">
+                            <input type="date" id="editInicio_${idx}" value="${p.inicio}">
+                            <input type="number" id="editDias_${idx}" value="${p.dias}" min="1">
+                        </div>
+                        <div class="item-periodo-edit-actions">
+                            <button class="btn-cancelar-edicao" data-idx="${idx}">Cancelar</button>
+                            <button class="btn-salvar-edicao" data-idx="${idx}">Salvar</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // ----- MODO VISUALIZAÇÃO -----
+                const inicioData = new Date(p.inicio + 'T00:00:00');
+                const fimData = calcularFim(p.inicio, p.dias);
+                const retornoData = calcularRetorno(p.inicio, p.dias);
+                item.innerHTML = `
+                    <div class="item-periodo-info">
+                        <span class="item-periodo-cor" style="background:${cor.bg}"></span>
+                        <div>
+                            <span>${cor.label}: ${formatarData(inicioData)} → ${formatarData(fimData)} (${p.dias} dias)</span>
+                            <div class="item-periodo-retorno"><i class="fas fa-rotate-left"></i> Retorno ao trabalho: <strong>${formatarData(retornoData)}</strong></div>
+                        </div>
+                    </div>
+                    <div class="item-periodo-actions">
+                        <button class="btn-editar" data-idx="${idx}"><i class="fas fa-pen"></i></button>
+                        <button class="btn-limpar" data-idx="${idx}">Limpar</button>
+                    </div>
+                `;
+            }
             container.appendChild(item);
         });
 
@@ -512,11 +629,55 @@
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(e.currentTarget.dataset.idx);
                 periodos.splice(idx, 1);
+                editandoIdx = null;
                 salvarPeriodos();
                 atualizarListaFeriasUI();
                 renderizarFormularios();
                 renderizarCalendario();
                 showToast('Período removido!');
+            });
+        });
+
+        container.querySelectorAll('.btn-editar').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                editandoIdx = parseInt(e.currentTarget.dataset.idx);
+                atualizarListaFeriasUI();
+            });
+        });
+
+        container.querySelectorAll('.btn-cancelar-edicao').forEach(btn => {
+            btn.addEventListener('click', () => {
+                editandoIdx = null;
+                atualizarListaFeriasUI();
+            });
+        });
+
+        container.querySelectorAll('.btn-salvar-edicao').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.currentTarget.dataset.idx);
+                const novoInicio = document.getElementById(`editInicio_${idx}`).value;
+                const novoDias = parseInt(document.getElementById(`editDias_${idx}`).value) || 1;
+
+                if (!novoInicio) { showToast('Selecione uma data válida!'); return; }
+
+                // Verifica sobreposição com OUTROS períodos (ignorando o próprio)
+                let dataLoop = new Date(novoInicio + 'T00:00:00');
+                for (let i = 0; i < novoDias; i++) {
+                    const key = `${dataLoop.getFullYear()}-${String(dataLoop.getMonth()+1).padStart(2,'0')}-${String(dataLoop.getDate()).padStart(2,'0')}`;
+                    const ocupante = mapaFerias[key];
+                    if (ocupante !== undefined && ocupante !== idx) {
+                        showToast('⚠️ Período se sobrepõe com outro já salvo!');
+                        return;
+                    }
+                    dataLoop.setDate(dataLoop.getDate() + 1);
+                }
+
+                periodos[idx] = { inicio: novoInicio, dias: novoDias };
+                editandoIdx = null;
+                salvarPeriodos();
+                atualizarListaFeriasUI();
+                renderizarCalendario();
+                showToast(`${CORES_FERIAS[idx].label} atualizado!`);
             });
         });
     }
@@ -670,3 +831,7 @@
 </script>
 </body>
 </html>
+          
+          
+   
+        
