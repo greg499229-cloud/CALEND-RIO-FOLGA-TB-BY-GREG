@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Escala de Trabalho TB</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--bg-page:#f4f6f9;--card-bg:#fff;--text-primary:#1e2937;--text-secondary:#64748b;--border:#e2e8f0;--btn-bg:#3b82f6;--feriado-bg:#fee2e2;--feriado-text:#b91c1c;--trabalho-bg:#d1fae5;--trabalho-text:#065f46;--folga-bg:#fef3c7;--folga-text:#854d0e;--domingo-color:#ef4444}
+body.dark{--bg-page:#0f172a;--card-bg:#1e2937;--text-primary:#f1f5f9;--text-secondary:#94a3b8;--border:#334155;--btn-bg:#60a5fa;--feriado-bg:#450a0a;--feriado-text:#fda4af;--trabalho-bg:#052e16;--trabalho-text:#4ade80;--folga-bg:#451a03;--folga-text:#fbbf24;--domingo-color:#f87171}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg-page);min-height:100vh;padding:8px;display:flex;align-items:center;justify-content:center}
+.container{width:100%;max-width:440px;margin:0 auto;background:var(--card-bg);border-radius:20px;box-shadow:0 10px 30px -5px rgba(0,0,0,.1);overflow:hidden;display:flex;flex-direction:column;min-height:580px}
+.app-page{display:none;flex-direction:column;flex:1}
+.app-page.active{display:flex}
+.header{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.title h1{font-size:1.25rem;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:6px}
+.title p{font-size:.7rem;color:var(--text-secondary)}
+.buttons{display:flex;gap:8px}
+.buttons button{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;background:var(--card-bg);color:var(--text-primary);border:1px solid var(--border)}
+.buttons button#shareBtn{background:var(--btn-bg);color:#fff;border:none}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-page)}
+.month-year{font-size:1.1rem;font-weight:700;color:var(--text-primary);flex:1;text-align:center}
+.nav-btn{width:34px;height:34px;border-radius:50%;background:var(--card-bg);border:1px solid var(--border);color:var(--text-primary);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.tag-ferias{display:none;margin:8px 14px 0;padding:8px 12px;border-radius:10px;font-size:.8rem;font-weight:700;text-align:center;color:#fff}
+.tag-ferias.show{display:block}
+.weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:.65rem;font-weight:600;color:var(--text-secondary);padding:8px 10px 4px;border-bottom:1px solid var(--border)}
+.weekdays span{min-width:0}
+.days{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;gap:4px;padding:10px;flex:1;min-height:0}
+.day{background:var(--card-bg);border:1.5px solid var(--border);border-radius:10px;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:2px;padding:4px 2px;position:relative;min-width:0;overflow:hidden}
+.day.tem-feriado{border-color:var(--feriado-text)}
+.day.today{border-color:#3b82f6;background:rgba(59,130,246,.08)}
+.day.dia-ferias{border-color:transparent!important}
+.day.dia-ferias .day-number,.day.dia-ferias .badge{color:#fff!important}
+.day-number{font-size:.95rem;font-weight:700;color:var(--text-primary);line-height:1.2}
+.domingo .day-number{color:var(--domingo-color)}
+.badge{font-size:.55rem;font-weight:700;padding:1px 4px;border-radius:9999px;width:85%;text-align:center;line-height:1.3}
+.trabalho-badge{background:var(--trabalho-bg);color:var(--trabalho-text)}
+.folga-badge{background:var(--folga-bg);color:var(--folga-text)}
+.feriado-badge{width:94%;font-size:.5rem;font-weight:700;line-height:1.3;text-align:center;padding:1px 3px;border-radius:6px;background:var(--feriado-bg);color:var(--feriado-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty-day{opacity:.3;border-style:dashed}
+.content-ferias{padding:16px;display:flex;flex-direction:column;gap:14px;flex:1;overflow-y:auto}
+.form-card{background:var(--bg-page);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.form-card-title{font-size:.8rem;font-weight:700;color:var(--text-secondary);display:flex;align-items:center;gap:6px}
+.form-card-title .cor-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:.8rem;font-weight:600;color:var(--text-secondary)}
+.form-group input{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card-bg);color:var(--text-primary);font-size:.95rem;outline:none}
+.btn-salvar-ferias{background:var(--btn-bg);color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;font-size:.95rem;cursor:pointer}
+.aviso-folga-inicio{font-size:.75rem;color:#b45309;font-weight:600;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:8px 10px;display:flex;align-items:flex-start;gap:6px}
+.aviso-folga-inicio:empty{display:none;padding:0;border:none}
+.lista-periodos{border-top:1px solid var(--border);padding-top:14px}
+.lista-periodos h4{font-size:.85rem;color:var(--text-primary);margin-bottom:8px;font-weight:700}
+.lista-periodos-scroll{display:flex;flex-direction:column;gap:8px}
+.item-periodo{padding:10px 12px;border-radius:10px;display:flex;justify-content:space-between;align-items:flex-start;border:1px solid var(--border);gap:8px}
+.item-periodo-info{display:flex;align-items:flex-start;gap:8px}
+.item-periodo-cor{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.item-periodo span{font-size:.82rem;color:var(--text-primary);font-weight:500}
+.item-periodo-retorno{font-size:.72rem;color:var(--text-secondary);margin-top:3px;display:flex;align-items:center;gap:4px}
+.item-periodo-retorno strong{color:#10b981}
+.item-periodo-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-editar{background:var(--btn-bg);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:.72rem;font-weight:600;cursor:pointer}
+.item-periodo-edit{display:flex;flex-direction:column;gap:8px;width:100%}
+.item-periodo-edit .form-row{display:flex;gap:6px}
+.item-periodo-edit input{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card-bg);color:var(--text-primary);font-size:.85rem;outline:none;width:100%}
+.item-periodo-edit-actions{display:flex;gap:6px}
+.btn-salvar-edicao,.btn-cancelar-edicao{flex:1;padding:8px;border:none;border-radius:8px;font-weight:700;font-size:.78rem;cursor:pointer}
+.btn-salvar-edicao{background:#10b981;color:#fff}
+.btn-cancelar-edicao{background:var(--border);color:var(--text-primary)}
+.btn-limpar{background:#ef4444;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:.72rem;font-weight:600;cursor:pointer;flex-shrink:0}
+.empty-list{font-size:.82rem;color:var(--text-secondary);font-style:italic;text-align:center;padding:8px 0}
+.tab-bar{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--border);background:var(--card-bg)}
+.tab-item{padding:12px;text-align:center;color:var(--text-secondary);font-size:.75rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:.2s}
+.tab-item i{font-size:1.2rem}
+.tab-item.active{color:var(--btn-bg);background:rgba(59,130,246,.05)}
+.footer{text-align:center;font-size:.6rem;color:var(--text-secondary);padding:8px 0;background:var(--bg-page);border-top:1px solid var(--border)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:2000;opacity:0;visibility:hidden;transition:.2s}
+.modal-overlay.active{opacity:1;visibility:visible}
+.modal-box{background:var(--card-bg);width:86%;max-width:300px;border-radius:16px;padding:18px;text-align:center}
+.modal-box h3{color:var(--text-primary);margin-bottom:8px}
+.modal-box p{color:var(--text-secondary);margin-bottom:16px}
+.modal-close-btn{width:100%;padding:10px;border-radius:8px;background:var(--btn-bg);color:#fff;border:none;font-weight:600;cursor:pointer}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--text-primary);color:var(--bg-page);padding:12px 24px;border-radius:12px;font-size:.9rem;font-weight:500;opacity:0;transition:all .4s ease;z-index:3000;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (max-width:600px){
+html,body{height:100%}
+body{padding:0;display:block;min-height:100vh;min-height:100dvh}
+.container{max-width:none;width:100%;height:100vh;height:100dvh;min-height:0;margin:0;border-radius:0;box-shadow:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.app-page{min-height:0}
+.content-ferias{min-height:0}
+.days{padding:8px}
+.day-number{font-size:1.05rem}
+.badge{font-size:.6rem}
+}
+@media (max-width:380px){.badge{font-size:.5rem}.day-number{font-size:.9rem}.feriado-badge{font-size:.42rem}.header .title h1{font-size:1rem}}
+#formConfig{display:flex;flex-direction:column;gap:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:8px 12px;border-radius:9999px;border:1px solid var(--border);background:var(--card-bg);color:var(--text-primary);font-size:.8rem;font-weight:600;cursor:pointer}
+.chip.active{background:var(--btn-bg);color:#fff;border-color:transparent}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg .chip{border-radius:10px;text-align:center}
+.semana-chips{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dia-chip{padding:8px 0;border-radius:10px;text-align:center;font-size:.7rem}
+.dia-chip.active{background:var(--folga-bg);color:var(--folga-text);border-color:var(--folga-text)}
+.horas{display:flex;gap:8px}
+.cfg-resumo{font-size:.72rem;color:var(--text-secondary)}
+.aviso-remarcar{display:none;background:#ffedd5;border:1px solid #fdba74;color:#9a3412;border-radius:10px;padding:10px 12px;font-size:.8rem;font-weight:700;text-align:center}
+.aviso-remarcar.show{display:block}
+#modalText{white-space:pre-line}
+.modal-actions{display:flex;gap:8px}
+.modal-actions .modal-close-btn{flex:1}
+.modal-actions .sec{background:var(--border);color:var(--text-primary)}
+.modal-actions .perigo{background:#ef4444}
+.day.dia-retorno{background:#8b5cf6!important;border-color:transparent!important}
+.day.dia-retorno .day-number,.day.dia-retorno .badge{color:#fff!important}
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="pageCalendario" class="app-page active">
+    <div class="header" id="captureArea">
+      <div class="title">
+        <h1><i class="fas fa-calendar-alt"></i> Escala TB</h1>
+        <p id="subtituloEscala"></p>
+      </div>
+      <div class="buttons">
+        <button id="shareBtn"><i class="fas fa-share-alt"></i></button>
+        <button id="darkBtn"><i class="fas fa-moon"></i></button>
+      </div>
+    </div>
+    <div class="nav">
+      <button id="prevBtn" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+      <span class="month-year" id="monthYear"></span>
+      <button id="nextBtn" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+      <button id="todayBtn" style="background:var(--btn-bg);color:white;width:38px;height:38px;border:none;border-radius:50%;cursor:pointer;"><i class="fas fa-calendar-day"></i></button>
+    </div>
+    <div class="tag-ferias" id="tagFerias"></div>
+    <div class="weekdays">
+      <span>DOM</span><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span>
+    </div>
+    <div class="days" id="daysGrid"></div>
+  </div>
+
+  <div id="pageFerias" class="app-page">
+    <div class="header">
+      <div class="title">
+        <h1><i class="fas fa-umbrella-beach"></i> Férias</h1>
+        <p>Adicione até 3 períodos de descanso</p>
+      </div>
+    </div>
+    <div class="content-ferias">
+      <div class="aviso-remarcar" id="avisoRemarcar">⚠️ Remarcar férias: a escala foi alterada e as férias antigas foram apagadas.</div>
+      <div id="formsFerias"></div>
+      <div class="lista-periodos">
+        <h4>Períodos Salvos:</h4>
+        <div class="lista-periodos-scroll" id="statusFeriasContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pageConfig" class="app-page">
+    <div class="header">
+      <div class="title">
+        <h1><i class="fas fa-gear"></i> Configurar escala</h1>
+        <p>Defina folgas, entrada e saída</p>
+      </div>
+    </div>
+    <div class="content-ferias">
+      <div id="formConfig"></div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab-item active" id="tabCalendario"><i class="fas fa-calendar-days"></i><span>Escala</span></div>
+    <div class="tab-item" id="tabFerias"><i class="fas fa-umbrella-beach"></i><span>Férias</span></div>
+    <div class="tab-item" id="tabConfig"><i class="fas fa-gear"></i><span>Config</span></div>
+  </div>
+  <div class="footer" id="footerBase"></div>
+</div>
+
+<div class="modal-overlay" id="customModal">
+  <div class="modal-box">
+    <h3 id="modalDate"></h3>
+    <p id="modalText"></p>
+    <button class="modal-close-btn" id="modalCloseBtn">Fechar</button>
+  </div>
+</div>
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <h3>Alterar a escala?</h3>
+    <p>Alterar a escala vai apagar suas férias salvas. Você precisará remarcar. Continuar?</p>
+    <div class="modal-actions">
+      <button class="modal-close-btn sec" id="confirmNo">Cancelar</button>
+      <button class="modal-close-btn perigo" id="confirmYes">Continuar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== CONFIGURAÇÃO DE CORES DAS FÉRIAS ====================
+const CORES_FERIAS = [
+  { bg: '#10b981', label: '1º Período' },
+  { bg: '#f59e0b', label: '2º Período' },
+  { bg: '#06b6d4', label: '3º Período' },
+];
+const MAX_PERIODOS = 3;
+const COR_DIA_PASSADO = '#ef4444';
+
+// ==================== FERIADOS ====================
+const feriadosLocaisSLZ = [
+  { mes: 6, dia: 29, nome: "São Pedro (São Luís)" },
+  { mes: 7, dia: 28, nome: "Adesão do Maranhão" },
+  { mes: 9, dia: 8, nome: "Natividade de N. Sra / Aniversário de São Luís" },
+  { mes: 12, dia: 8, nome: "Nossa Senhora da Conceição" }
+];
+
+function getFeriado(ano, mes, dia) {
+  const nacionais = [
+    [1,1,"Confraternização Universal"],[4,21,"Tiradentes"],
+    [5,1,"Dia do Trabalho"],[9,7,"Independência do Brasil"],
+    [10,12,"Nossa Senhora Aparecida"],[11,2,"Finados"],
+    [11,15,"Proclamação da República"],[11,20,"Dia da Consciência Negra"],
+    [12,25,"Natal"]
+  ];
+  for (let f of nacionais) if (f[0] === mes && f[1] === dia) return f[2];
+  const data = new Date(ano, mes - 1, dia);
+  function getEaster(y) {
+    const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4;
+    const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
+    const h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4;
+    const l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451);
+    const mesE=Math.floor((h+l-7*m+114)/31), diaE=((h+l-7*m+114)%31)+1;
+    return new Date(y, mesE-1, diaE);
+  }
+  const easter = getEaster(ano);
+  const carnaval = new Date(easter); carnaval.setDate(easter.getDate()-47);
+  const sexta = new Date(easter); sexta.setDate(easter.getDate()-2);
+  const corpus = new Date(easter); corpus.setDate(easter.getDate()+60);
+  if (data.toDateString()===carnaval.toDateString()) return "Carnaval";
+  if (data.toDateString()===sexta.toDateString()) return "Sexta-Feira Santa";
+  if (data.toDateString()===easter.toDateString()) return "Páscoa";
+  if (data.toDateString()===corpus.toDateString()) return "Corpus Christi";
+  if (mes===6 && dia===24) return "São João (São Luís)";
+  for (let p of feriadosLocaisSLZ) if (p.mes===mes && p.dia===dia) return p.nome;
+  return null;
+}
+
+// ==================== ESCALA ====================
+const CHAVE_ESCALA = 'escala_config_v1';
+const CHAVE_REMARCAR = 'remarcar_ferias_v1';
+const ESCALA_PADRAO = { preset:'2x2', modo:'ciclo', trab:2, folga:2, inicio:'2024-01-01', diasFolga:[0,6], turno:'', entrada:'', saida:'' };
+const PRESETS = [
+  { id:'2x2', nome:'2x2', modo:'ciclo', trab:2, folga:2, inicio:'2024-01-01' },
+  { id:'12x36', nome:'12x36', modo:'ciclo', trab:1, folga:1 },
+  { id:'4x2', nome:'4x2', modo:'ciclo', trab:4, folga:2 },
+  { id:'6x1', nome:'6x1', modo:'ciclo', trab:6, folga:1 },
+  { id:'5x2', nome:'5x2 comercial', modo:'semana', diasFolga:[0,6] },
+  { id:'custom', nome:'Personalizada' }
+];
+
+function carregarEscala() {
+  try {
+    const e = JSON.parse(localStorage.getItem(CHAVE_ESCALA));
+    if (e && (e.modo === 'ciclo' || e.modo === 'semana')) return Object.assign({}, ESCALA_PADRAO, e);
+  } catch (_) {}
+  return JSON.parse(JSON.stringify(ESCALA_PADRAO));
+}
+let escala = carregarEscala();
+
+function getTurno(data) {
+  const d0 = new Date(data.getFullYear(), data.getMonth(), data.getDate());
+  if (escala.modo === 'semana') {
+    return escala.diasFolga.includes(d0.getDay()) ? 'Folga' : 'Trab.';
+  }
+  const base = new Date(escala.inicio + 'T00:00:00');
+  const ciclo = escala.trab + escala.folga;
+  const diff = Math.round((d0 - base) / 86400000);
+  let pos = diff % ciclo;
+  if (pos < 0) pos += ciclo;
+  return pos < escala.trab ? 'Trab.' : 'Folga';
+}
+
+// ==================== ESTADO ====================
+let anoAtual = new Date().getFullYear();
+let mesAtual = new Date().getMonth();
+let darkMode = localStorage.getItem('darkMode') === 'true';
+let periodos = JSON.parse(localStorage.getItem('periodos_ferias_v2')) || [];
+let mapaFerias = {};
+let retornoMapa = {};
+
+function chaveData(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function reconstruirMapa() {
+  mapaFerias = {};
+  retornoMapa = {};
+  periodos.forEach((p, idx) => {
+    const retorno = calcularRetorno(p.inicio, p.dias);
+    retornoMapa[chaveData(retorno)] = idx;
+    // folgas entre o fim das férias e o retorno também são dias de descanso
+    const d = calcularFim(p.inicio, p.dias);
+    d.setDate(d.getDate() + 1);
+    while (d < retorno) {
+      mapaFerias[chaveData(d)] = idx;
+      d.setDate(d.getDate() + 1);
+    }
+  });
+  periodos.forEach((p, idx) => {
+    let dataLoop = new Date(p.inicio + 'T00:00:00');
+    for (let i = 0; i < p.dias; i++) {
+      mapaFerias[chaveData(dataLoop)] = idx;
+      dataLoop.setDate(dataLoop.getDate() + 1);
+    }
+  });
+}
+
+function salvarPeriodos() {
+  localStorage.setItem('periodos_ferias_v2', JSON.stringify(periodos));
+  reconstruirMapa();
+}
+
+// ==================== UI: FORMULÁRIOS ====================
+function renderizarFormularios() {
+  const container = document.getElementById('formsFerias');
+  container.innerHTML = '';
+  const proximoSlot = periodos.length;
+
+  if (proximoSlot >= MAX_PERIODOS) {
+    container.innerHTML = `<p style="font-size:0.82rem;color:var(--text-secondary);font-style:italic;text-align:center;">Limite de ${MAX_PERIODOS} períodos atingido. Remova um para adicionar outro.</p>`;
+    return;
+  }
+
+  const cor = CORES_FERIAS[proximoSlot];
+  const card = document.createElement('div');
+  card.className = 'form-card';
+  card.innerHTML = `
+    <div class="form-card-title">
+      <span class="cor-dot" style="background:${cor.bg}"></span>
+      Novo período — ${cor.label}
+    </div>
+    <div class="form-group">
+      <label>Data de Início</label>
+      <input type="date" id="dataInicio_${proximoSlot}">
+    </div>
+    <div class="form-group">
+      <label>Quantidade de Dias</label>
+      <input type="number" id="qtdDias_${proximoSlot}" value="15" min="1">
+    </div>
+    <div class="aviso-folga-inicio" id="avisoFolgaInicio_${proximoSlot}"></div>
+    <button class="btn-salvar-ferias" style="background:${cor.bg}" data-slot="${proximoSlot}">
+      <i class="fas fa-plus"></i> Adicionar Período
+    </button>
+  `;
+  container.appendChild(card);
+
+  document.getElementById(`dataInicio_${proximoSlot}`).value = new Date().toISOString().split('T')[0];
+
+  function checarFolgaInicio() {
+    const inputData = document.getElementById(`dataInicio_${proximoSlot}`).value;
+    const avisoEl = document.getElementById(`avisoFolgaInicio_${proximoSlot}`);
+    if (!inputData) { avisoEl.innerHTML = ''; return; }
+    const dataEscolhida = new Date(inputData + 'T00:00:00');
+    if (getTurno(dataEscolhida) !== 'Trab.') {
+      avisoEl.innerHTML = `<i class="fas fa-triangle-exclamation"></i> O dia escolhido é uma folga na escala. Você pode salvar mesmo assim.`;
+    } else {
+      avisoEl.innerHTML = '';
+    }
+  }
+  document.getElementById(`dataInicio_${proximoSlot}`).addEventListener('change', checarFolgaInicio);
+  checarFolgaInicio();
+
+  card.querySelector('.btn-salvar-ferias').addEventListener('click', (e) => {
+    salvarPeriodo(parseInt(e.currentTarget.dataset.slot));
+  });
+}
+
+function salvarPeriodo(slot) {
+  const dataInicioValor = document.getElementById(`dataInicio_${slot}`).value;
+  const qtdDias = parseInt(document.getElementById(`qtdDias_${slot}`).value) || 1;
+  if (!dataInicioValor) { showToast('Selecione uma data válida!'); return; }
+
+  let dataLoop = new Date(dataInicioValor + 'T00:00:00');
+  for (let i = 0; i < qtdDias; i++) {
+    if (mapaFerias[chaveData(dataLoop)] !== undefined) {
+      showToast('⚠️ Período se sobrepõe com outro já salvo!');
+      return;
+    }
+    dataLoop.setDate(dataLoop.getDate() + 1);
+  }
+
+  periodos.push({ inicio: dataInicioValor, dias: qtdDias });
+  limparAvisoRemarcar();
+  salvarPeriodos();
+  atualizarListaFeriasUI();
+  renderizarFormularios();
+  renderizarCalendario();
+
+  const primeiroDia = new Date(dataInicioValor + 'T00:00:00');
+  if (getTurno(primeiroDia) !== 'Trab.') {
+    showToast(`⚠️ ${CORES_FERIAS[slot].label} salvo! Atenção: o 1º dia cai numa folga.`);
+  } else {
+    showToast(`${CORES_FERIAS[slot].label} salvo! Confira no calendário.`);
+  }
+}
+
+// ==================== UI: LISTA DE PERÍODOS ====================
+let editandoIdx = null;
+
+function calcularFim(inicio, dias) {
+  const fim = new Date(inicio + 'T00:00:00');
+  fim.setDate(fim.getDate() + dias - 1);
+  return fim;
+}
+
+function calcularRetorno(inicio, dias) {
+  const fim = calcularFim(inicio, dias);
+  let retorno = new Date(fim);
+  retorno.setDate(retorno.getDate() + 1);
+  while (getTurno(retorno) !== 'Trab.') {
+    retorno.setDate(retorno.getDate() + 1);
+  }
+  return retorno;
+}
+
+function formatarData(d) {
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+function atualizarListaFeriasUI() {
+  atualizarAvisoRemarcar();
+  const container = document.getElementById('statusFeriasContainer');
+  if (periodos.length === 0) {
+    container.innerHTML = `<p class="empty-list">Nenhum período adicionado ainda.</p>`;
+    return;
+  }
+  container.innerHTML = '';
+
+  periodos.forEach((p, idx) => {
+    const cor = CORES_FERIAS[idx];
+    const item = document.createElement('div');
+    item.className = 'item-periodo';
+    item.style.background = `${cor.bg}18`;
+    item.style.borderColor = `${cor.bg}55`;
+
+    if (editandoIdx === idx) {
+      item.innerHTML = `
+        <div class="item-periodo-edit">
+          <div class="form-card-title">
+            <span class="cor-dot" style="background:${cor.bg}"></span>
+            Editando ${cor.label}
+          </div>
+          <div class="form-row">
+            <input type="date" id="editInicio_${idx}" value="${p.inicio}">
+            <input type="number" id="editDias_${idx}" value="${p.dias}" min="1">
+          </div>
+          <div class="item-periodo-edit-actions">
+            <button class="btn-cancelar-edicao" data-idx="${idx}">Cancelar</button>
+            <button class="btn-salvar-edicao" data-idx="${idx}">Salvar</button>
+          </div>
+        </div>
+      `;
+    } else {
+      const inicioData = new Date(p.inicio + 'T00:00:00');
+      const fimData = calcularFim(p.inicio, p.dias);
+      const retornoData = calcularRetorno(p.inicio, p.dias);
+      item.innerHTML = `
+        <div class="item-periodo-info">
+          <span class="item-periodo-cor" style="background:${cor.bg}"></span>
+          <div>
+            <span>${cor.label}: ${formatarData(inicioData)} → ${formatarData(fimData)} (${p.dias} dias)</span>
+            <div class="item-periodo-retorno"><i class="fas fa-rotate-left"></i> Retorno ao trabalho: <strong>${formatarData(retornoData)}</strong></div>
+          </div>
+        </div>
+        <div class="item-periodo-actions">
+          <button class="btn-editar" data-idx="${idx}"><i class="fas fa-pen"></i></button>
+          <button class="btn-limpar" data-idx="${idx}">Limpar</button>
+        </div>
+      `;
+    }
+    container.appendChild(item);
+  });
+
+  container.querySelectorAll('.btn-limpar').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(e.currentTarget.dataset.idx);
+      periodos.splice(idx, 1);
+      editandoIdx = null;
+      salvarPeriodos();
+      atualizarListaFeriasUI();
+      renderizarFormularios();
+      renderizarCalendario();
+      showToast('Período removido!');
+    });
+  });
+
+  container.querySelectorAll('.btn-editar').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      editandoIdx = parseInt(e.currentTarget.dataset.idx);
+      atualizarListaFeriasUI();
+    });
+  });
+
+  container.querySelectorAll('.btn-cancelar-edicao').forEach(btn => {
+    btn.addEventListener('click', () => {
+      editandoIdx = null;
+      atualizarListaFeriasUI();
+    });
+  });
+
+  container.querySelectorAll('.btn-salvar-edicao').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(e.currentTarget.dataset.idx);
+      const novoInicio = document.getElementById(`editInicio_${idx}`).value;
+      const novoDias = parseInt(document.getElementById(`editDias_${idx}`).value) || 1;
+      if (!novoInicio) { showToast('Selecione uma data válida!'); return; }
+
+      let dataLoop = new Date(novoInicio + 'T00:00:00');
+      for (let i = 0; i < novoDias; i++) {
+        const ocupante = mapaFerias[chaveData(dataLoop)];
+        if (ocupante !== undefined && ocupante !== idx) {
+          showToast('⚠️ Período se sobrepõe com outro já salvo!');
+          return;
+        }
+        dataLoop.setDate(dataLoop.getDate() + 1);
+      }
+
+      periodos[idx] = { inicio: novoInicio, dias: novoDias };
+      editandoIdx = null;
+      salvarPeriodos();
+      atualizarListaFeriasUI();
+      renderizarCalendario();
+      showToast(`${CORES_FERIAS[idx].label} atualizado!`);
+    });
+  });
+}
+
+// ==================== TAG DE CONTAGEM DAS FÉRIAS ====================
+function atualizarTagFerias() {
+  const el = document.getElementById('tagFerias');
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const DIA = 86400000;
+  let msg = '', cor = '', proximo = null, emAndamento = false;
+
+  for (let i = 0; i < periodos.length; i++) {
+    const ini = new Date(periodos[i].inicio + 'T00:00:00');
+    const retorno = calcularRetorno(periodos[i].inicio, periodos[i].dias);
+
+    if (hoje >= ini && hoje < retorno) {
+      const falta = Math.round((retorno - hoje) / DIA);
+      msg = falta === 1
+        ? '🏖️ Último dia para aproveitar as férias!'
+        : `🏖️ Faltam ${falta} dias para aproveitar as férias`;
+      cor = CORES_FERIAS[i].bg;
+      emAndamento = true;
+      break;
+    }
+    if (ini > hoje && (!proximo || ini < proximo.ini)) {
+      proximo = { ini, i };
+    }
+  }
+
+  if (!emAndamento && proximo) {
+    const d = Math.round((proximo.ini - hoje) / DIA);
+    msg = d === 1
+      ? '⏳ Falta 1 dia para as férias começarem'
+      : `⏳ Faltam ${d} dias para as férias começarem`;
+    cor = CORES_FERIAS[proximo.i].bg;
+  }
+
+  if (!msg && periodos.length === 0 && precisaRemarcar()) {
+    msg = '⚠️ Escala alterada: remarcar férias';
+    cor = '#f97316';
+  }
+
+  el.textContent = msg;
+  el.style.background = cor;
+  el.classList.toggle('show', !!msg);
+}
+
+// ==================== CALENDÁRIO ====================
+function renderizarCalendario() {
+  const primeiroDia = new Date(anoAtual, mesAtual, 1);
+  const ultimoDia = new Date(anoAtual, mesAtual + 1, 0);
+  const startWeek = primeiroDia.getDay();
+  const totalDias = ultimoDia.getDate();
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+
+  const daysGrid = document.getElementById('daysGrid');
+  daysGrid.innerHTML = '';
+
+  for (let i = 0; i < startWeek; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'day empty-day';
+    daysGrid.appendChild(empty);
+  }
+
+  for (let d = 1; d <= totalDias; d++) {
+    const dataAtual = new Date(anoAtual, mesAtual, d);
+    const turno = getTurno(dataAtual);
+    const feriado = getFeriado(anoAtual, mesAtual+1, d);
+    const isDomingo = dataAtual.getDay() === 0;
+    const isHoje = dataAtual.getTime() === hoje.getTime();
+
+    const periodoIdx = mapaFerias[chaveData(dataAtual)];
+    const ehFerias = periodoIdx !== undefined;
+    const ehRetorno = !ehFerias && retornoMapa[chaveData(dataAtual)] !== undefined;
+
+    const dayDiv = document.createElement('div');
+    dayDiv.className = `day ${isDomingo?'domingo':''} ${isHoje?'today':''} ${ehFerias?'dia-ferias':''} ${ehRetorno?'dia-retorno':''} ${feriado?'tem-feriado':''}`;
+
+    if (ehFerias) {
+      // Dias de férias que já passaram ficam vermelhos
+      dayDiv.style.background = dataAtual < hoje
+        ? COR_DIA_PASSADO
+        : CORES_FERIAS[periodoIdx].bg;
+    }
+
+    const num = document.createElement('div');
+    num.className = 'day-number';
+    num.textContent = d;
+    dayDiv.appendChild(num);
+
+    const badge = document.createElement('div');
+    badge.className = `badge ${turno==='Trab.'?'trabalho-badge':'folga-badge'}`;
+    badge.textContent = turno + (turno === 'Trab.' && escala.turno ? (escala.turno === 'noturno' ? ' 🌙' : ' ☀️') : '');
+    dayDiv.appendChild(badge);
+
+    if (feriado) {
+      const fer = document.createElement('div');
+      fer.className = 'feriado-badge';
+      fer.textContent = feriado;
+      dayDiv.appendChild(fer);
+    }
+
+    dayDiv.style.cursor = 'pointer';
+    dayDiv.addEventListener('click', () => {
+      const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      openModal(`${d} de ${meses[mesAtual]} de ${anoAtual}`, descreverDia(turno, feriado, periodoIdx, ehRetorno));
+    });
+
+    daysGrid.appendChild(dayDiv);
+  }
+
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('monthYear').textContent = `${meses[mesAtual]} ${anoAtual}`;
+  atualizarTagFerias();
+}
+
+// ==================== HELPERS ====================
+function openModal(dataTexto, feriadoTexto) {
+  document.getElementById('modalDate').textContent = dataTexto;
+  document.getElementById('modalText').textContent = feriadoTexto;
+  document.getElementById('customModal').classList.add('active');
+}
+function closeModal() { document.getElementById('customModal').classList.remove('active'); }
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function mesAnterior() { if (mesAtual===0){mesAtual=11;anoAtual--;}else mesAtual--; renderizarCalendario(); }
+function mesProximo() { if (mesAtual===11){mesAtual=0;anoAtual++;}else mesAtual++; renderizarCalendario(); }
+function irHoje() { const h=new Date(); anoAtual=h.getFullYear(); mesAtual=h.getMonth(); renderizarCalendario(); }
+
+function aplicarTema(escuro) {
+  document.body.classList.toggle('dark', escuro);
+  localStorage.setItem('darkMode', escuro);
+  document.getElementById('darkBtn').innerHTML = escuro
+    ? '<i class="fas fa-sun"></i>'
+    : '<i class="fas fa-moon"></i>';
+}
+
+async function compartilharEscala() {
+  try {
+    const element = document.getElementById('pageCalendario');
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim() || '#ffffff',
+      useCORS: true, allowTaint: true, logging: false
+    });
+    canvas.toBlob(async blob => {
+      if (!blob) return;
+      const file = new File([blob], 'escala.png', {type:'image/png'});
+      if (navigator.share) {
+        try { await navigator.share({title:'Escala TB', files:[file]}); } catch(_){}
+      } else {
+        const link = document.createElement('a');
+        link.download = `escala_${mesAtual+1}_${anoAtual}.png`;
+        link.href = URL.createObjectURL(blob); link.click();
+      }
+    }, 'image/png');
+  } catch { showToast('Erro ao compartilhar'); }
+}
+
+// ==================== AVISO DE REMARCAR FÉRIAS ====================
+function precisaRemarcar() { return localStorage.getItem(CHAVE_REMARCAR) === '1'; }
+function limparAvisoRemarcar() { localStorage.removeItem(CHAVE_REMARCAR); }
+function atualizarAvisoRemarcar() {
+  const el = document.getElementById('avisoRemarcar');
+  if (el) el.classList.toggle('show', precisaRemarcar() && periodos.length === 0);
+}
+
+// ==================== CONFIGURAÇÃO DA ESCALA ====================
+const NOMES_DIAS = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+let cfg = null;
+let confirmCb = null;
+
+function clonarEscala(e) { return JSON.parse(JSON.stringify(e)); }
+
+function assinaturaEscala(e) {
+  return e.modo === 'semana'
+    ? 'S:' + e.diasFolga.slice().sort((a,b) => a-b).join(',')
+    : `C:${e.trab}:${e.folga}:${e.inicio}`;
+}
+
+function textoEscala(e) {
+  const p = PRESETS.find(x => x.id === e.preset);
+  const pronto = p && p.id !== 'custom';
+  let t;
+  if (e.modo === 'semana') {
+    const dias = e.diasFolga.length ? e.diasFolga.slice().sort((a,b) => a-b).map(i => NOMES_DIAS[i]).join(', ') : 'nenhuma';
+    t = (pronto ? p.nome + ' • ' : '') + 'Folga: ' + dias;
+  } else {
+    const nome = pronto ? p.nome : `${e.trab}x${e.folga}`;
+    t = `${nome} • ${e.trab} ${e.trab === 1 ? 'dia' : 'dias'} trabalho • ${e.folga} ${e.folga === 1 ? 'dia' : 'dias'} folga`;
+  }
+  if (e.turno) t += e.turno === 'noturno' ? ' • 🌙 Noturno' : ' • ☀️ Diurno';
+  return t;
+}
+
+function atualizarCabecalho() {
+  document.getElementById('subtituloEscala').textContent = textoEscala(escala);
+  const base = escala.modo === 'ciclo'
+    ? 'Início do ciclo: ' + formatarData(new Date(escala.inicio + 'T00:00:00'))
+    : 'Folgas fixas na semana';
+  document.getElementById('footerBase').textContent = `${base} | Feriados Nacionais + São Luís - MA`;
+}
+
+function descreverDia(turno, feriado, periodoIdx, ehRetorno) {
+  const linhas = [];
+  if (feriado) linhas.push('🎉 ' + feriado);
+  if (turno === 'Trab.') {
+    let t = '💼 Trabalho';
+    if (escala.turno) t += escala.turno === 'noturno' ? ' (noturno)' : ' (diurno)';
+    linhas.push(t);
+    if (escala.entrada && escala.saida) {
+      const prox = escala.saida <= escala.entrada ? ' (dia seguinte)' : '';
+      linhas.push(`Entrada ${escala.entrada} → Saída ${escala.saida}${prox}`);
+    }
+  } else {
+    linhas.push('😴 Folga');
+  }
+  if (periodoIdx !== undefined) linhas.push('🏖️ Férias — ' + CORES_FERIAS[periodoIdx].label);
+  if (ehRetorno) linhas.push('🔙 Retorno das férias ao trabalho');
+  return linhas.join('\n');
+}
+
+function renderizarConfig(reset = true) {
+  if (reset || !cfg) cfg = clonarEscala(escala);
+  const c = document.getElementById('formConfig');
+  const camposModo = cfg.modo === 'ciclo' ? `
+    <div class="horas">
+      <div class="form-group" style="flex:1"><label>Dias de trabalho</label><input type="number" id="cfgTrab" min="1" max="30" value="${cfg.trab}"></div>
+      <div class="form-group" style="flex:1"><label>Dias de folga</label><input type="number" id="cfgFolga" min="1" max="30" value="${cfg.folga}"></div>
+    </div>
+    <div class="form-group"><label>Primeiro dia de trabalho do ciclo</label><input type="date" id="cfgInicio" value="${cfg.inicio || ''}"></div>
+    <p class="cfg-resumo">Informe um dia em que você começou a trabalhar um ciclo novo (pode ser no passado).</p>
+  ` : `
+    <div class="form-group"><label>Dias de folga na semana</label>
+      <div class="semana-chips">${NOMES_DIAS.map((n,i) => `<button class="chip dia-chip ${cfg.diasFolga.includes(i) ? 'active' : ''}" data-dia="${i}">${n}</button>`).join('')}</div>
+    </div>
+  `;
+  c.innerHTML = `
+    <div class="form-card">
+      <div class="form-card-title"><i class="fas fa-bolt"></i> Escalas prontas</div>
+      <div class="chips">${PRESETS.map(p => `<button class="chip ${cfg.preset === p.id ? 'active' : ''}" data-preset="${p.id}">${p.nome}</button>`).join('')}</div>
+    </div>
+    <div class="form-card">
+      <div class="form-card-title"><i class="fas fa-sliders"></i> Tipo de escala</div>
+      <div class="seg">
+        <button class="chip ${cfg.modo === 'ciclo' ? 'active' : ''}" data-modo="ciclo">Ciclo</button>
+        <button class="chip ${cfg.modo === 'semana' ? 'active' : ''}" data-modo="semana">Dias fixos</button>
+      </div>
+      ${camposModo}
+    </div>
+    <div class="form-card">
+      <div class="form-card-title"><i class="fas fa-clock"></i> Turno</div>
+      <div class="seg">
+        <button class="chip ${cfg.turno === 'diurno' ? 'active' : ''}" data-turno="diurno">☀️ Diurno</button>
+        <button class="chip ${cfg.turno === 'noturno' ? 'active' : ''}" data-turno="noturno">🌙 Noturno</button>
+      </div>
+      <div class="horas">
+        <div class="form-group" style="flex:1"><label>Entrada</label><input type="time" id="cfgEntrada" value="${cfg.entrada || ''}"></div>
+        <div class="form-group" style="flex:1"><label>Saída</label><input type="time" id="cfgSaida" value="${cfg.saida || ''}"></div>
+      </div>
+    </div>
+    <button class="btn-salvar-ferias" id="btnSalvarCfg"><i class="fas fa-check"></i> Salvar escala</button>
+  `;
+  ligarEventosConfig(c);
+}
+
+function ligarEventosConfig(c) {
+  const marcarCustom = () => {
+    cfg.preset = 'custom';
+    c.querySelectorAll('[data-preset]').forEach(b => b.classList.toggle('active', b.dataset.preset === 'custom'));
+  };
+
+  c.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    const p = PRESETS.find(x => x.id === b.dataset.preset);
+    cfg.preset = p.id;
+    if (p.id !== 'custom') {
+      cfg.modo = p.modo;
+      if (p.modo === 'ciclo') { cfg.trab = p.trab; cfg.folga = p.folga; cfg.inicio = p.inicio || ''; }
+      else { cfg.diasFolga = p.diasFolga.slice(); }
+    }
+    renderizarConfig(false);
+  }));
+
+  c.querySelectorAll('[data-modo]').forEach(b => b.addEventListener('click', () => {
+    cfg.modo = b.dataset.modo;
+    cfg.preset = 'custom';
+    renderizarConfig(false);
+  }));
+
+  c.querySelectorAll('[data-dia]').forEach(b => b.addEventListener('click', () => {
+    const i = parseInt(b.dataset.dia);
+    const pos = cfg.diasFolga.indexOf(i);
+    if (pos >= 0) cfg.diasFolga.splice(pos, 1); else cfg.diasFolga.push(i);
+    cfg.preset = 'custom';
+    renderizarConfig(false);
+  }));
+
+  c.querySelectorAll('[data-turno]').forEach(b => b.addEventListener('click', () => {
+    cfg.turno = b.dataset.turno;
+    if (cfg.turno === 'diurno') { cfg.entrada = '07:00'; cfg.saida = '19:00'; }
+    else { cfg.entrada = '19:00'; cfg.saida = '07:00'; }
+    renderizarConfig(false);
+  }));
+
+  const ligar = (id, fn) => {
+    const el = c.querySelector('#' + id);
+    if (el) el.addEventListener('input', () => fn(el.value));
+  };
+  ligar('cfgTrab', v => { cfg.trab = parseInt(v) || 0; marcarCustom(); });
+  ligar('cfgFolga', v => { cfg.folga = parseInt(v) || 0; marcarCustom(); });
+  ligar('cfgInicio', v => { cfg.inicio = v; });
+  ligar('cfgEntrada', v => { cfg.entrada = v; });
+  ligar('cfgSaida', v => { cfg.saida = v; });
+
+  c.querySelector('#btnSalvarCfg').addEventListener('click', salvarEscala);
+}
+
+function salvarEscala() {
+  if (cfg.modo === 'ciclo') {
+    if (!(cfg.trab >= 1) || !(cfg.folga >= 1)) { showToast('Informe dias de trabalho e de folga (mínimo 1).'); return; }
+    if (!cfg.inicio) { showToast('Informe o primeiro dia de trabalho do ciclo.'); return; }
+  } else if (cfg.diasFolga.length >= 7) {
+    showToast('Deixe pelo menos 1 dia de trabalho na semana.');
+    return;
+  }
+  if (!!cfg.entrada !== !!cfg.saida) { showToast('Preencha entrada e saída.'); return; }
+
+  const mudou = assinaturaEscala(cfg) !== assinaturaEscala(escala);
+  if (mudou && periodos.length > 0) {
+    abrirConfirm(() => aplicarEscala(true));
+    return;
+  }
+  aplicarEscala(false);
+}
+
+function aplicarEscala(apagarFerias) {
+  const tinhaFerias = periodos.length > 0;
+  escala = clonarEscala(cfg);
+  localStorage.setItem(CHAVE_ESCALA, JSON.stringify(escala));
+  if (apagarFerias && tinhaFerias) {
+    periodos = [];
+    editandoIdx = null;
+    salvarPeriodos();
+    localStorage.setItem(CHAVE_REMARCAR, '1');
+  }
+  atualizarCabecalho();
+  atualizarListaFeriasUI();
+  renderizarFormularios();
+  renderizarCalendario();
+  renderizarConfig(true);
+  showToast(apagarFerias && tinhaFerias ? 'Escala salva! Remarque suas férias.' : 'Escala salva!');
+}
+
+function abrirConfirm(cb) {
+  confirmCb = cb;
+  document.getElementById('confirmModal').classList.add('active');
+}
+function fecharConfirm() {
+  document.getElementById('confirmModal').classList.remove('active');
+  confirmCb = null;
+}
+
+function mostrarAba(nome) {
+  ['Calendario', 'Ferias', 'Config'].forEach(n => {
+    document.getElementById('tab' + n).classList.toggle('active', n === nome);
+    document.getElementById('page' + n).classList.toggle('active', n === nome);
+  });
+  if (nome === 'Calendario') renderizarCalendario();
+  if (nome === 'Ferias') atualizarAvisoRemarcar();
+  if (nome === 'Config') renderizarConfig(true);
+}
+
+// ==================== INIT ====================
+document.addEventListener('DOMContentLoaded', () => {
+  reconstruirMapa();
+  renderizarCalendario();
+  aplicarTema(darkMode);
+  atualizarListaFeriasUI();
+  renderizarFormularios();
+
+  atualizarCabecalho();
+  renderizarConfig(true);
+
+  ['Calendario', 'Ferias', 'Config'].forEach(n => {
+    document.getElementById('tab' + n).addEventListener('click', () => mostrarAba(n));
+  });
+
+  const confirmModal = document.getElementById('confirmModal');
+  document.getElementById('confirmNo').addEventListener('click', fecharConfirm);
+  document.getElementById('confirmYes').addEventListener('click', () => {
+    const cb = confirmCb;
+    fecharConfirm();
+    if (cb) cb();
+  });
+  confirmModal.addEventListener('click', e => { if (e.target === confirmModal) fecharConfirm(); });
+
+  document.getElementById('prevBtn').addEventListener('click', mesAnterior);
+  document.getElementById('nextBtn').addEventListener('click', mesProximo);
+  document.getElementById('todayBtn').addEventListener('click', irHoje);
+  document.getElementById('shareBtn').addEventListener('click', compartilharEscala);
+  document.getElementById('darkBtn').addEventListener('click', () => { darkMode=!darkMode; aplicarTema(darkMode); });
+
+  const modal = document.getElementById('customModal');
+  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target===modal) closeModal(); });
+});
+</script>
+</body>
+</html>
