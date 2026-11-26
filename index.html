@@ -126,18 +126,19 @@ body{padding:0;display:block;min-height:100vh;min-height:100dvh}
 .item-periodo-ver{font-size:.72rem;color:var(--btn-bg);font-weight:600;margin-top:3px;display:flex;align-items:center;gap:4px}
 .day.destaque{box-shadow:0 0 0 3px #facc15;animation:pulsar .9s ease-in-out 3;z-index:2}
 @keyframes pulsar{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
-:root{--trab-fill:#cbd5e1;--trab-text:#1e293b;--folga-fill:#fef08a;--folga-num:#422006;--trab-badge-bg:#1e293b;--trab-badge-text:#f1f5f9;--folga-badge-bg:#713f12;--folga-badge-text:#fef9c3}
+:root{--trab-fill:#cbd5e1;--trab-text:#1e293b;--folga-fill:#10b981;--folga-num:#ffffff;--trab-badge-bg:#1e293b;--trab-badge-text:#f1f5f9;--folga-badge-bg:#064e3b;--folga-badge-text:#d1fae5}
 body.dark{--trab-fill:#475569;--trab-text:#f1f5f9;--trab-badge-bg:#0f172a}
 .day.turno-trab{background:var(--trab-fill)}
 .day.turno-folga{background:var(--folga-fill)}
 .day.turno-trab .day-number{color:var(--trab-text)}
 .day.turno-trab.domingo .day-number{color:var(--domingo-color)}
 .day.turno-folga .day-number{color:var(--folga-num)}
-.day.turno-folga.domingo .day-number{color:#b91c1c}
+.day.turno-folga.domingo .day-number{color:#7f1d1d}
 .trabalho-badge{background:var(--trab-badge-bg);color:var(--trab-badge-text)}
 .folga-badge{background:var(--folga-badge-bg);color:var(--folga-badge-text)}
 .day.today{border-color:#3b82f6;box-shadow:0 0 0 2px #3b82f6 inset}
 .day.today.destaque{box-shadow:0 0 0 2px #3b82f6 inset,0 0 0 3px #facc15}
+.day.dia-ferias.ferias-claro .day-number{color:#422006!important}
 </style>
 </head>
 <body>
@@ -225,7 +226,7 @@ body.dark{--trab-fill:#475569;--trab-text:#f1f5f9;--trab-badge-bg:#0f172a}
 <script>
 // ==================== CONFIGURAÇÃO DE CORES DAS FÉRIAS ====================
 const CORES_FERIAS = [
-  { bg: '#10b981', label: '1º Período' },
+  { bg: '#fef08a', label: '1º Período', claro: true },
   { bg: '#f59e0b', label: '2º Período' },
   { bg: '#06b6d4', label: '3º Período' },
 ];
@@ -382,7 +383,7 @@ function renderizarFormularios() {
       <input type="number" id="qtdDias_${proximoSlot}" value="15" min="1">
     </div>
     <div class="aviso-folga-inicio" id="avisoFolgaInicio_${proximoSlot}"></div>
-    <button class="btn-salvar-ferias" style="background:${cor.bg}" data-slot="${proximoSlot}">
+    <button class="btn-salvar-ferias" style="background:${cor.bg};color:${cor.claro ? '#422006' : '#fff'}" data-slot="${proximoSlot}">
       <i class="fas fa-plus"></i> Adicionar Período
     </button>
   `;
@@ -633,6 +634,7 @@ function atualizarTagFerias() {
   el.dataset.idx = clicavel ? String(tagIdx) : '';
   el.classList.toggle('clicavel', clicavel);
   el.style.background = cor;
+  el.style.color = (tagIdx !== null && CORES_FERIAS[tagIdx].claro) ? '#422006' : '#fff';
   el.classList.toggle('show', !!msg);
 }
 
@@ -669,9 +671,9 @@ function renderizarCalendario() {
 
     if (ehFerias) {
       // Dias de férias que já passaram ficam vermelhos
-      dayDiv.style.background = dataAtual < hoje
-        ? COR_DIA_PASSADO
-        : CORES_FERIAS[periodoIdx].bg;
+      const passado = dataAtual < hoje;
+      dayDiv.style.background = passado ? COR_DIA_PASSADO : CORES_FERIAS[periodoIdx].bg;
+      if (!passado && CORES_FERIAS[periodoIdx].claro) dayDiv.classList.add('ferias-claro');
     }
 
     const num = document.createElement('div');
