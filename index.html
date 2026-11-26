@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>Escala de Trabalho TB</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3b82f6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Escala TB">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
@@ -114,6 +121,23 @@ body{padding:0;display:block;min-height:100vh;min-height:100dvh}
 .modal-actions .perigo{background:#ef4444}
 .day.dia-retorno{background:#8b5cf6!important;border-color:transparent!important}
 .day.dia-retorno .day-number,.day.dia-retorno .badge{color:#fff!important}
+.tag-ferias.clicavel,.item-periodo.clicavel{cursor:pointer}
+.item-periodo.clicavel:active{opacity:.8}
+.item-periodo-ver{font-size:.72rem;color:var(--btn-bg);font-weight:600;margin-top:3px;display:flex;align-items:center;gap:4px}
+.day.destaque{box-shadow:0 0 0 3px #facc15;animation:pulsar .9s ease-in-out 3;z-index:2}
+@keyframes pulsar{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+:root{--trab-fill:#cbd5e1;--trab-text:#1e293b;--folga-fill:#fef08a;--folga-num:#422006;--trab-badge-bg:#1e293b;--trab-badge-text:#f1f5f9;--folga-badge-bg:#713f12;--folga-badge-text:#fef9c3}
+body.dark{--trab-fill:#475569;--trab-text:#f1f5f9;--trab-badge-bg:#0f172a}
+.day.turno-trab{background:var(--trab-fill)}
+.day.turno-folga{background:var(--folga-fill)}
+.day.turno-trab .day-number{color:var(--trab-text)}
+.day.turno-trab.domingo .day-number{color:var(--domingo-color)}
+.day.turno-folga .day-number{color:var(--folga-num)}
+.day.turno-folga.domingo .day-number{color:#b91c1c}
+.trabalho-badge{background:var(--trab-badge-bg);color:var(--trab-badge-text)}
+.folga-badge{background:var(--folga-badge-bg);color:var(--folga-badge-text)}
+.day.today{border-color:#3b82f6;box-shadow:0 0 0 2px #3b82f6 inset}
+.day.today.destaque{box-shadow:0 0 0 2px #3b82f6 inset,0 0 0 3px #facc15}
 </style>
 </head>
 <body>
@@ -307,6 +331,14 @@ function reconstruirMapa() {
       mapaFerias[chaveData(d)] = idx;
       d.setDate(d.getDate() + 1);
     }
+    // folgas logo antes do início das férias também são dias de descanso
+    const iniDesc = calcularInicioDescanso(p.inicio);
+    const a = new Date(p.inicio + 'T00:00:00');
+    a.setDate(a.getDate() - 1);
+    while (a >= iniDesc) {
+      mapaFerias[chaveData(a)] = idx;
+      a.setDate(a.getDate() - 1);
+    }
   });
   periodos.forEach((p, idx) => {
     let dataLoop = new Date(p.inicio + 'T00:00:00');
@@ -425,6 +457,17 @@ function calcularRetorno(inicio, dias) {
   return retorno;
 }
 
+function calcularInicioDescanso(inicio) {
+  const d = new Date(inicio + 'T00:00:00');
+  for (let i = 0; i < 60; i++) {
+    const ant = new Date(d);
+    ant.setDate(ant.getDate() - 1);
+    if (getTurno(ant) === 'Trab.') break;
+    d.setDate(d.getDate() - 1);
+  }
+  return d;
+}
+
 function formatarData(d) {
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
@@ -472,6 +515,7 @@ function atualizarListaFeriasUI() {
           <div>
             <span>${cor.label}: ${formatarData(inicioData)} → ${formatarData(fimData)} (${p.dias} dias)</span>
             <div class="item-periodo-retorno"><i class="fas fa-rotate-left"></i> Retorno ao trabalho: <strong>${formatarData(retornoData)}</strong></div>
+            <div class="item-periodo-ver"><i class="fas fa-calendar-day"></i> Ver no calendário ›</div>
           </div>
         </div>
         <div class="item-periodo-actions">
@@ -481,6 +525,13 @@ function atualizarListaFeriasUI() {
       `;
     }
     container.appendChild(item);
+    if (editandoIdx !== idx) {
+      item.classList.add('clicavel');
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        irParaPeriodo(idx);
+      });
+    }
   });
 
   container.querySelectorAll('.btn-limpar').forEach(btn => {
@@ -542,10 +593,10 @@ function atualizarTagFerias() {
   const el = document.getElementById('tagFerias');
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const DIA = 86400000;
-  let msg = '', cor = '', proximo = null, emAndamento = false;
+  let msg = '', cor = '', proximo = null, emAndamento = false, tagIdx = null;
 
   for (let i = 0; i < periodos.length; i++) {
-    const ini = new Date(periodos[i].inicio + 'T00:00:00');
+    const ini = calcularInicioDescanso(periodos[i].inicio);
     const retorno = calcularRetorno(periodos[i].inicio, periodos[i].dias);
 
     if (hoje >= ini && hoje < retorno) {
@@ -554,6 +605,7 @@ function atualizarTagFerias() {
         ? '🏖️ Último dia para aproveitar as férias!'
         : `🏖️ Faltam ${falta} dias para aproveitar as férias`;
       cor = CORES_FERIAS[i].bg;
+      tagIdx = i;
       emAndamento = true;
       break;
     }
@@ -568,6 +620,7 @@ function atualizarTagFerias() {
       ? '⏳ Falta 1 dia para as férias começarem'
       : `⏳ Faltam ${d} dias para as férias começarem`;
     cor = CORES_FERIAS[proximo.i].bg;
+    tagIdx = proximo.i;
   }
 
   if (!msg && periodos.length === 0 && precisaRemarcar()) {
@@ -575,7 +628,10 @@ function atualizarTagFerias() {
     cor = '#f97316';
   }
 
-  el.textContent = msg;
+  const clicavel = tagIdx !== null && !!msg;
+  el.textContent = clicavel ? msg + '  ›' : msg;
+  el.dataset.idx = clicavel ? String(tagIdx) : '';
+  el.classList.toggle('clicavel', clicavel);
   el.style.background = cor;
   el.classList.toggle('show', !!msg);
 }
@@ -609,7 +665,7 @@ function renderizarCalendario() {
     const ehRetorno = !ehFerias && retornoMapa[chaveData(dataAtual)] !== undefined;
 
     const dayDiv = document.createElement('div');
-    dayDiv.className = `day ${isDomingo?'domingo':''} ${isHoje?'today':''} ${ehFerias?'dia-ferias':''} ${ehRetorno?'dia-retorno':''} ${feriado?'tem-feriado':''}`;
+    dayDiv.className = `day ${turno==='Trab.'?'turno-trab':'turno-folga'} ${isDomingo?'domingo':''} ${isHoje?'today':''} ${ehFerias?'dia-ferias':''} ${ehRetorno?'dia-retorno':''} ${chaveData(dataAtual)===destaqueChave?'destaque':''} ${feriado?'tem-feriado':''}`;
 
     if (ehFerias) {
       // Dias de férias que já passaram ficam vermelhos
@@ -912,6 +968,25 @@ function mostrarAba(nome) {
   if (nome === 'Config') renderizarConfig(true);
 }
 
+// ==================== ATALHO PARA O MÊS DAS FÉRIAS ====================
+let destaqueChave = null;
+let destaqueTimer = null;
+
+function irParaPeriodo(idx) {
+  const p = periodos[idx];
+  if (!p) return;
+  const ini = new Date(p.inicio + 'T00:00:00');
+  anoAtual = ini.getFullYear();
+  mesAtual = ini.getMonth();
+  destaqueChave = chaveData(ini);
+  mostrarAba('Calendario');
+  clearTimeout(destaqueTimer);
+  destaqueTimer = setTimeout(() => {
+    destaqueChave = null;
+    renderizarCalendario();
+  }, 3000);
+}
+
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', () => {
   reconstruirMapa();
@@ -922,6 +997,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   atualizarCabecalho();
   renderizarConfig(true);
+
+  const tag = document.getElementById('tagFerias');
+  tag.addEventListener('click', () => {
+    if (tag.dataset.idx) irParaPeriodo(parseInt(tag.dataset.idx));
+  });
 
   ['Calendario', 'Ferias', 'Config'].forEach(n => {
     document.getElementById('tab' + n).addEventListener('click', () => mostrarAba(n));
@@ -946,6 +1026,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
   modal.addEventListener('click', e => { if (e.target===modal) closeModal(); });
 });
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
